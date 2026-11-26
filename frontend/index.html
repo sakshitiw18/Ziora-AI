@@ -1,0 +1,1511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ziora AI — Voice Doctor Appointment Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --panel: rgba(16, 24, 40, 0.75);
+    --panel-2: rgba(22, 32, 54, 0.75);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --brand: #0284c7;
+    --brand-hover: #0369a1;
+    --brand-2: #38bdf8;
+    --accent: #0284c7;
+    --good: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --radius: 14px;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #0a0e17;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input { font-family: inherit; }
+
+  /* Aurora dropped */
+  .aurora { display: none !important; }
+
+  /* Shell */
+  .shell { position: relative; z-index: 1; min-height: 100%; display: flex; flex-direction: column; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+    background: rgba(7, 11, 24, 0.55); backdrop-filter: blur(14px);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .logo {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: #0284c7;
+    display: grid; place-items: center; font-weight: 800; color: #ffffff;
+    font-size: 17px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  }
+  .brand h1 { font-size: 17px; margin: 0; letter-spacing: .2px; font-weight: 800; }
+  .brand p { font-size: 12px; margin: 2px 0 0; color: var(--muted); }
+
+  .top-right { display: flex; align-items: center; gap: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+    padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border-strong);
+    background: rgba(255,255,255,0.03); color: var(--muted);
+  }
+  .chip .live {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--good);
+    box-shadow: 0 0 0 4px rgba(62,224,165,0.2); animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(62,224,165,0.2); }
+    50% { box-shadow: 0 0 0 8px rgba(62,224,165,0.02); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Top-right Sign In */
+  #navSignInBtn {
+    background: transparent; border: 1px solid var(--border-strong);
+    color: var(--text); padding: 7px 15px; border-radius: 8px;
+    font-size: 12.5px; font-weight: 600; transition: all .15s ease;
+  }
+  #navSignInBtn:hover { background: rgba(255,255,255,0.06); border-color: var(--brand); }
+
+  /* Layout */
+  .page {
+    max-width: 1440px; width: 100%; margin: 0 auto; padding: 24px 32px 60px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* Slim Hero Bar */
+  .hero-bar {
+    position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 12px 20px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--panel); box-shadow: var(--shadow-md);
+  }
+  .hero-bar-text {
+    display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--muted);
+  }
+  .hero-bar-text strong {
+    color: var(--text); font-weight: 600;
+  }
+  .hero-bar-actions {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  @media (max-width: 680px) {
+    .hero-bar { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+    .hero-bar-actions { width: 100%; }
+    .hero-bar-actions button { width: 100%; justify-content: center; }
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border-strong); background: rgba(255,255,255,0.04); color: var(--text);
+    border-radius: 10px; padding: 9px 16px; font-weight: 600; font-size: 13px;
+    transition: transform .12s ease, background .15s ease, border-color .15s, box-shadow .15s;
+  }
+  .btn:hover { background: rgba(255,255,255,0.08); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: #0284c7;
+    border: 1px solid #0284c7; color: white;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    font-weight: 600; padding: 9px 18px; font-size: 13px;
+  }
+  .btn.primary:hover { background: #0369a1; border-color: #0369a1; }
+  .btn.danger {
+    background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #fca5a5;
+  }
+  .btn.danger:hover { background: rgba(239, 68, 68, 0.2); }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 960px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .hero { grid-template-columns: 1fr; padding: 24px; }
+    .hero-visual { display: none; }
+    .chip { display: none; }
+  }
+  .stat {
+    position: relative; padding: 18px 20px; border-radius: 18px; border: 1px solid var(--border);
+    background: linear-gradient(160deg, rgba(24,32,64,0.75), rgba(16,22,46,0.75));
+    backdrop-filter: blur(10px); box-shadow: var(--shadow-md); overflow: hidden;
+    transition: transform .2s ease, border-color .2s;
+  }
+  .stat:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+  .stat::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-a), var(--accent-b)); }
+  .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+  .stat .value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; }
+  .stat .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .stat.s1 { --accent-a: #6c8cff; --accent-b: #a06bff; }
+  .stat.s2 { --accent-a: #3ee0c8; --accent-b: #6c8cff; }
+  .stat.s3 { --accent-a: #ff6bb3; --accent-b: #ffbe55; }
+  .stat.s4 { --accent-a: #ffbe55; --accent-b: #3ee0c8; }
+
+  /* Content */
+  .content { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; }
+  @media (max-width: 1000px) {
+    .content { grid-template-columns: 1fr; }
+    .page { padding: 20px; }
+    .topbar { padding: 14px 18px; }
+  }
+  .card {
+    border-radius: var(--radius); border: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(24,32,64,0.72), rgba(16,22,46,0.72));
+    backdrop-filter: blur(12px); box-shadow: var(--shadow-md); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between; padding: 18px 22px;
+    border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  }
+  .card-head .title { display: flex; align-items: center; gap: 10px; }
+  .card-head .icon {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-size: 14px;
+    background: linear-gradient(135deg, rgba(108,140,255,0.25), rgba(160,107,255,0.25));
+    border: 1px solid rgba(160,107,255,0.35);
+  }
+  .card-head h2 { font-size: 15px; margin: 0; font-weight: 800; letter-spacing: .2px; }
+  .card-head .sub { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .card-body { padding: 16px 20px 20px; flex: 1; }
+
+  /* Doctors */
+  .doctor {
+    position: relative; border-radius: 16px; border: 1px solid var(--border);
+    padding: 14px 16px; margin-bottom: 12px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    transition: transform .2s ease, border-color .2s, box-shadow .2s; overflow: hidden;
+  }
+  .doctor::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--doc-accent); }
+  .doctor:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+  .doctor-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .doctor-id { display: flex; align-items: center; gap: 12px; }
+  .doctor-avatar {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    font-weight: 900; font-size: 15px; color: #06102b;
+    background: var(--doc-accent); box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  }
+  .doctor h4 { margin: 0; font-size: 14px; font-weight: 700; }
+  .doctor .spec { font-size: 12px; color: var(--muted); margin-top: 2px; display: inline-flex; align-items: center; gap: 6px; }
+  .doctor .spec .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--doc-accent); }
+  .doctor .count { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--muted); }
+  .slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .slot {
+    font-size: 12px; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--muted);
+    transition: all .25s ease; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .slot.free { color: var(--text); border-color: color-mix(in srgb, var(--doc-accent) 45%, transparent); background: color-mix(in srgb, var(--doc-accent) 12%, transparent); }
+  .slot.taken { text-decoration: line-through; opacity: .35; }
+
+  /* Appointments */
+  .appt {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 16px; margin-bottom: 10px;
+    border: 1px solid var(--border); background: linear-gradient(160deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    transition: background .4s ease, border-color .4s ease, transform .15s;
+  }
+  .appt:hover { border-color: var(--border-strong); }
+  .appt.flash { animation: flash 1.6s ease; }
+  @keyframes flash {
+    0% { background: rgba(62,224,165,0.25); border-color: rgba(62,224,165,0.6); transform: scale(1.02); }
+    100% { background: rgba(255,255,255,0.01); border-color: var(--border); transform: none; }
+  }
+  .appt.cancelled { opacity: .55; }
+  .appt-avatar {
+    width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #6c8cff, #a06bff);
+    display: grid; place-items: center; font-weight: 900; color: white; font-size: 14px;
+    box-shadow: 0 6px 18px rgba(108,140,255,0.3);
+  }
+  .appt-main h4 { margin: 0; font-size: 14px; font-weight: 700; }
+  .appt-main p { margin: 3px 0 0; font-size: 12px; color: var(--muted); }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-top: 6px; }
+  .badge.booked { background: rgba(62,224,165,0.14); color: var(--good); border: 1px solid rgba(62,224,165,0.3); }
+  .badge.cancelled { background: rgba(255,90,122,0.14); color: #ff9ab1; border: 1px solid rgba(255,90,122,0.3); }
+  .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ========================================================= */
+  /* PHONE MODAL */
+  /* ========================================================= */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(3,7,18,0.72); backdrop-filter: blur(10px);
+    display: grid; place-items: center; z-index: 100; padding: 16px; animation: fadeIn .25s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
+  .phone {
+    width: 340px; max-width: 100%;
+    border-radius: 26px;
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+    padding: 14px 14px 18px; 
+    display: flex; 
+    flex-direction: column;
+    height: 540px; 
+    max-height: 92vh;
+    overflow: hidden; 
+    animation: pop .3s ease;
+    position: relative;
+  }
+  @keyframes pop { from { transform: scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .phone-back {
+    flex-shrink: 0; 
+    align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px; margin-bottom: 6px; transition: background .15s, color .15s;
+  }
+  .phone-back:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+  .phone-top {
+    flex-shrink: 0; 
+    text-align: center; padding: 4px 0 8px;
+  }
+  .phone-top .avatar {
+    width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
+    background: #0284c7;
+    display: grid; place-items: center; font-size: 22px; font-weight: 800; color: white;
+    box-shadow: 0 0 0 6px rgba(2,132,199,0.18);
+  }
+  .phone-top .avatar.ringing::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 50%;
+    border: 2px solid rgba(160,107,255,0.6); animation: ringPulse 1.4s infinite;
+  }
+  @keyframes ringPulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.35); opacity: 0; } }
+  .phone-top h3 { margin: 0; font-size: 16px; font-weight: 800; }
+  .phone-top .state {
+    font-size: 11px; color: var(--muted); margin-top: 3px; display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  }
+  .phone-top .state::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px rgba(62,224,165,0.2); }
+  .phone-top .timer { font-variant-numeric: tabular-nums; font-size: 18px; margin-top: 8px; letter-spacing: 2px; font-weight: 700; color: #b7c7ff; }
+
+  .wave-wrap {
+    flex-shrink: 0; 
+    margin: 12px 0; height: 50px; border-radius: 12px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    padding: 5px; overflow: hidden;
+  }
+
+  .transcript {
+    flex: 1 1 0px; 
+    overflow-y: auto; 
+    min-height: 120px; 
+    padding: 12px 10px;
+    border-radius: 16px;
+    background: #0b141a;
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .transcript::-webkit-scrollbar { width: 4px; }
+  .transcript::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+  
+  .bubble {
+    position: relative;
+    max-width: 82%;
+    padding: 7px 11px 5px 11px;
+    font-size: 13px;
+    line-height: 1.45;
+    word-wrap: break-word;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    animation: pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* WhatsApp Incoming Agent Bubble - Left aligned */
+  .bubble.agent, .bubble.assistant {
+    align-self: flex-start;
+    background: #202c33;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px 12px 12px 2px;
+  }
+
+  /* WhatsApp Outgoing User Bubble - Right aligned */
+  .bubble.user {
+    align-self: flex-end;
+    background: #005c4b;
+    border: 1px solid rgba(37,211,102,0.25);
+    border-radius: 12px 12px 2px 12px;
+  }
+
+  .bubble .who {
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: 0.3px;
+  }
+  .bubble .who.agent, .bubble .who.assistant { color: #53bdeb; }
+  .bubble .who.user { color: #7ae3b6; }
+
+  .bubble-text {
+    color: #e9edef;
+    font-size: 12.5px;
+    line-height: 1.42;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .bubble-meta {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    color: #8696a0;
+    margin-top: 2px;
+    user-select: none;
+  }
+
+  .booking-card {
+    flex-shrink: 0; 
+    margin-top: 10px; border-radius: 14px; padding: 12px 14px;
+    border: 1px solid rgba(62,224,165,0.5); background: linear-gradient(135deg, rgba(62,224,165,0.14), rgba(62,224,165,0.06));
+    animation: pop .3s ease; box-shadow: 0 10px 30px rgba(62,224,165,0.15);
+  }
+  .booking-card h4 { margin: 0 0 4px; font-size: 12px; color: var(--good); font-weight: 800; }
+  .booking-card p { margin: 1px 0; font-size: 11px; line-height: 1.4; }
+
+  .call-controls {
+    flex-shrink: 0; 
+    display: flex; justify-content: center; gap: 16px; margin-top: 14px;
+  }
+  .ctrl {
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 1px solid var(--border-strong); background: rgba(255,255,255,0.05); color: var(--text);
+    display: grid; place-items: center; font-size: 18px;
+    transition: transform .12s ease, background .15s, box-shadow .15s;
+  }
+  .ctrl:hover { background: rgba(255,255,255,0.1); }
+  .ctrl:active { transform: scale(0.95); }
+  .ctrl.active { background: linear-gradient(135deg, #ffbe55, #ff9a3c); color: #1a1000; border-color: transparent; box-shadow: 0 8px 20px rgba(255,190,85,0.4); }
+  
+  .ctrl.end { 
+    background: linear-gradient(135deg, #ff5a7a, #ff2e57); 
+    border-color: transparent; 
+    color: white; 
+    width: 52px; 
+    height: 52px; 
+    box-shadow: 0 10px 28px rgba(255,90,122,0.45); 
+  }
+  .ctrl.end:hover { filter: brightness(1.08); }
+  .ctrl:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ========================================================= */
+  /* AUTH MODAL */
+  /* ========================================================= */
+  .auth-overlay {
+    position: fixed; inset: 0; background: rgba(3,7,18,0.8); backdrop-filter: blur(12px);
+    display: grid; place-items: center; z-index: 150; padding: 16px; animation: fadeIn .25s ease;
+  }
+  .auth-modal {
+    width: 340px; max-width: 100%;
+    background: radial-gradient(600px 300px at 50% -10%, rgba(108,140,255,0.2), transparent 60%),
+                linear-gradient(180deg, #0e1730, #0a1124);
+    border: 1px solid var(--border-strong); border-radius: 20px;
+    padding: 20px 20px 16px; box-shadow: var(--shadow-lg); position: relative;
+    animation: pop .3s ease;
+    max-height: 95vh; overflow-y: auto;
+  }
+  .auth-close {
+    position: absolute; top: 12px; right: 12px; background: transparent; border: none;
+    color: var(--muted); font-size: 18px; cursor: pointer; transition: color .15s;
+  }
+  .auth-close:hover { color: var(--text); }
+  .auth-header { text-align: center; margin-bottom: 14px; }
+  .auth-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+  .auth-header p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+  
+  .auth-tabs {
+    display: flex; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 3px; margin-bottom: 14px;
+  }
+  .auth-tab {
+    flex: 1; padding: 7px; border: none; background: transparent; color: var(--muted);
+    font-weight: 600; font-size: 12px; border-radius: 7px; transition: all .2s ease;
+  }
+  .auth-tab.active { background: var(--panel-2); color: var(--text); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+  
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 10px; font-weight: 600; color: var(--muted); margin-bottom: 3px; }
+  .form-control {
+    width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03); color: var(--text); font-size: 12.5px;
+    transition: border-color .15s, background .15s;
+  }
+  .form-control:focus { outline: none; border-color: var(--brand); background: rgba(255,255,255,0.05); }
+  .form-control.error { border-color: var(--danger); }
+  
+  .pass-strength { margin-top: 4px; display: flex; gap: 3px; }
+  .pass-strength .bar { height: 3px; flex: 1; background: rgba(255,255,255,0.1); border-radius: 2px; transition: background .3s; }
+  .pass-strength.weak .bar:nth-child(1) { background: var(--danger); }
+  .pass-strength.fair .bar:nth-child(1), .pass-strength.fair .bar:nth-child(2) { background: var(--warn); }
+  .pass-strength.strong .bar:nth-child(1), .pass-strength.strong .bar:nth-child(2), .pass-strength.strong .bar:nth-child(3) { background: var(--good); }
+  
+  .auth-btn-submit {
+    width: 100%; padding: 10px; border-radius: 8px; border: none;
+    background: linear-gradient(135deg, #6c8cff, #a06bff); color: white;
+    font-size: 13px; font-weight: 700; margin-top: 6px; box-shadow: 0 6px 15px rgba(108,140,255,0.3);
+    transition: filter .15s, transform .1s;
+  }
+  .auth-btn-submit:hover { filter: brightness(1.1); }
+  .auth-btn-submit:active { transform: translateY(1px); }
+
+  .auth-divider {
+    display: flex; align-items: center; gap: 8px; margin: 12px 0; color: var(--muted); font-size: 10px;
+  }
+  .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  
+  .btn-google {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 9px; border-radius: 8px; border: 1px solid var(--border);
+    background: rgba(255,255,255,0.03); color: var(--text); font-size: 12.5px; font-weight: 600;
+    transition: background .15s;
+  }
+  .btn-google:hover { background: rgba(255,255,255,0.08); }
+  .btn-google svg { width: 15px; height: 15px; }
+  
+  .auth-footer { text-align: center; margin-top: 12px; font-size: 11px; color: var(--muted); }
+  .auth-footer a { color: var(--brand); text-decoration: none; font-weight: 600; cursor: pointer; }
+  .auth-footer a:hover { text-decoration: underline; }
+  
+  .forgot-wrap { display: flex; justify-content: flex-end; margin-top: -4px; margin-bottom: 10px; }
+  .forgot-link { font-size: 10px; color: var(--brand); text-decoration: none; cursor: pointer; }
+  .forgot-link:hover { text-decoration: underline; }
+
+  /* Toasts */
+  .toasts { position: fixed; right: 22px; bottom: 22px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+  .toast {
+    background: rgba(24,32,64,0.95); border: 1px solid var(--border-strong);
+    padding: 12px 16px; border-radius: 12px; font-size: 13px; box-shadow: var(--shadow-lg);
+    animation: slideIn .3s ease; backdrop-filter: blur(10px); font-weight: 600;
+  }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: none; opacity: 1; } }
+  .toast.good { border-color: rgba(62,224,165,0.5); color: #d3ffef; }
+  .toast.bad { border-color: rgba(255,90,122,0.5); color: #ffd0d8; }
+
+  .muted { color: var(--muted); }
+  .center { text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="aurora">
+  <div class="aurora-blob-3"></div>
+</div>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">Z</div>
+      <div>
+        <h1>Ziora AI</h1>
+        <p>Voice AI · Doctor Appointment Assistant</p>
+      </div>
+    </div>
+    <div class="top-right" id="authHeaderContainer">
+      <button class="btn ghost" id="navSignInBtn" style="font-size:12px; padding:6px 14px; border-radius:8px;">Sign In</button>
+
+    </div>
+  </header>
+
+  <div class="page">
+
+    <!-- SLIM HERO BAR -->
+    <section class="hero-bar">
+      <div class="hero-bar-text">
+        <span>🎙️</span>
+        <strong>Talk to Ziora:</strong>
+        <span>Speak naturally to check availability, book an appointment, or cancel.</span>
+      </div>
+      <div class="hero-bar-actions">
+        <button class="btn primary" id="tryCallBtn">📞 Try Call</button>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="stat s1">
+        <div class="label">Doctors</div>
+        <div class="value" id="statDoctors">0</div>
+        <div class="hint">Available this week</div>
+      </div>
+      <div class="stat s2">
+        <div class="label">Booked</div>
+        <div class="value" id="statBooked">0</div>
+        <div class="hint">Confirmed appointments</div>
+      </div>
+      <div class="stat s3">
+        <div class="label">Cancelled</div>
+        <div class="value" id="statCancelled">0</div>
+        <div class="hint">Cancelled appointments</div>
+      </div>
+      <div class="stat s4">
+        <div class="label">Next Slot</div>
+        <div class="value" id="statNext">—</div>
+        <div class="hint">Earliest upcoming</div>
+      </div>
+    </section>
+
+    <!-- CONTENT -->
+    <section class="content">
+      <div class="card">
+        <div class="card-head">
+          <div class="title">
+            <div class="icon">📅</div>
+            <h2>Appointments</h2>
+          </div>
+          <span class="sub" id="apptCount">0 total</span>
+        </div>
+        <div class="card-body" id="apptList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="title">
+            <div class="icon">🩺</div>
+            <h2>Doctors &amp; Slots</h2>
+          </div>
+          <span class="sub" id="docCount">0 doctors</span>
+        </div>
+        <div class="card-body" id="docList"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ================= STATE & API ================= */
+const isDirectBackend = window.location.port === '8000';
+const API = isDirectBackend ? window.location.origin : 'http://localhost:8000';
+const WS_BASE = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+                (isDirectBackend ? window.location.host : 'localhost:8000');
+
+let doctors = [];
+let appointments = [];
+let viewDate = '';
+let activeCall = null;
+let flashId = null;
+let eventsWs = null;
+
+// User session management from localStorage
+let currentUser = null;
+try {
+  const saved = localStorage.getItem('ziora_user');
+  if (saved) currentUser = JSON.parse(saved);
+} catch (e) {
+  console.warn('Could not restore user session:', e);
+}
+
+const DOCTOR_ACCENTS = {
+  d1: 'linear-gradient(135deg, #a06bff, #6c8cff)',
+  d2: 'linear-gradient(135deg, #ff6bb3, #a06bff)',
+  d3: 'linear-gradient(135deg, #3ee0c8, #3ea5e0)',
+  d4: 'linear-gradient(135deg, #ffbe55, #ff6b6b)',
+  d5: 'linear-gradient(135deg, #6c8cff, #3ee0c8)',
+  d6: 'linear-gradient(135deg, #ff8452, #ff507a)',
+  d7: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+  d8: 'linear-gradient(135deg, #38bdf8, #818cf8)',
+  d9: 'linear-gradient(135deg, #f472b6, #fb7185)',
+  d10: 'linear-gradient(135deg, #34d399, #059669)',
+};
+
+const DOCTOR_SOLID = {
+  d1: '#8c6eff',
+  d2: '#e564a9',
+  d3: '#36cbbb',
+  d4: '#f59e42',
+  d5: '#589bf0',
+  d6: '#ff6b5b',
+  d7: '#b866ea',
+  d8: '#3b92f6',
+  d9: '#ec4899',
+  d10: '#10b981',
+};
+
+function initials(name) {
+  return name.replace(/^Dr\.\s*/i, '').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function formatReadableDate(dStr) {
+  if (!dStr) return '';
+  try {
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const target = new Date(year, month, day);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      target.setHours(0,0,0,0);
+      const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+      
+      const dayName = target.toLocaleDateString('en-US', { weekday: 'short' });
+      const monthName = target.toLocaleDateString('en-US', { month: 'short' });
+      const dayNum = target.getDate();
+      const yr = target.getFullYear();
+
+      if (diffDays === 0) return `Today · ${dayName}, ${monthName} ${dayNum}`;
+      if (diffDays === 1) return `Tomorrow · ${dayName}, ${monthName} ${dayNum}`;
+      return `${dayName}, ${monthName} ${dayNum}, ${yr}`;
+    }
+  } catch (e) {}
+  return dStr;
+}
+
+function bookedSlotsMap() {
+  const map = {};
+  if (!Array.isArray(appointments)) return map;
+  appointments.filter(a => a && a.status === 'booked' && a.date === viewDate)
+    .forEach(a => { map[`${a.doctorId}-${a.slot}`] = true; });
+  return map;
+}
+
+/* ================= AUTHENTICATION & SESSIONS ================= */
+let currentAuthMode = 'signin';
+
+function setupAuthDropdown() {
+  const dropdownWrap = document.getElementById('authDropdownWrap');
+  const dropdownTrigger = document.getElementById('authDropdownTrigger');
+  const dropdownSignIn = document.getElementById('dropdownSignIn');
+  const dropdownSignUp = document.getElementById('dropdownSignUp');
+
+  if (dropdownTrigger) {
+    dropdownTrigger.onclick = (e) => {
+      e.stopPropagation();
+      // If clicking trigger directly, open signin modal
+      openAuth('signin');
+    };
+  }
+
+  if (dropdownSignIn) {
+    dropdownSignIn.onclick = (e) => {
+      e.stopPropagation();
+      if (dropdownWrap) dropdownWrap.classList.remove('open');
+      openAuth('signin');
+    };
+  }
+
+  if (dropdownSignUp) {
+    dropdownSignUp.onclick = (e) => {
+      e.stopPropagation();
+      if (dropdownWrap) dropdownWrap.classList.remove('open');
+      openAuth('signup');
+    };
+  }
+
+  document.addEventListener('click', () => {
+    if (dropdownWrap) dropdownWrap.classList.remove('open');
+  });
+}
+
+function updateHeaderAuth(user) {
+  const container = document.getElementById('authHeaderContainer');
+  if (!container) return;
+  if (!user) {
+    container.innerHTML = `
+      <button class="btn ghost" id="navSignInBtn" style="font-size:12px; padding:6px 14px; border-radius:8px;">Sign In</button>
+    `;
+    const btn = container.querySelector('#navSignInBtn');
+    if (btn) btn.onclick = () => openAuth('signin');
+    return;
+  }
+
+  const initialLetter = (user.name || user.email || 'U').charAt(0).toUpperCase();
+
+  container.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.06); padding:4px 10px; border-radius:24px; border:1px solid rgba(255,255,255,0.1);">
+      <div style="width:26px; height:26px; border-radius:50%; background:#0284c7; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#fff; flex-shrink:0;">
+        ${initialLetter}
+      </div>
+      <div style="font-size:12px; font-weight:600; color:var(--text); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ${user.name || user.email.split('@')[0]}
+      </div>
+      <button id="signOutBtn" title="Sign Out" style="background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:11px; padding:2px 4px; border-radius:4px; font-weight:600;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--muted)'">
+        Sign Out
+      </button>
+    </div>
+  `;
+
+  const sBtn = container.querySelector('#signOutBtn');
+  if (sBtn) {
+    sBtn.onclick = () => {
+      setCurrentUser(null);
+      pushToast('Signed out successfully.', 'good');
+    };
+  }
+}
+
+function setCurrentUser(user) {
+  currentUser = user;
+  if (user) {
+    localStorage.setItem('ziora_user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('ziora_user');
+  }
+  updateHeaderAuth(user);
+  loadData();
+}
+
+/* ================= GOOGLE AUTH PROMPT ================= */
+function openGoogleAccountPrompt(onSuccess) {
+  const gOverlay = document.createElement('div');
+  gOverlay.className = 'auth-overlay';
+  gOverlay.id = 'googleAuthOverlay';
+  gOverlay.style.zIndex = '99999';
+
+  const savedGoogle = localStorage.getItem('ziora_last_google');
+  let remembered = { email: 'alex.morgan@gmail.com', name: 'Alex Morgan' };
+  try { if (savedGoogle) remembered = JSON.parse(savedGoogle); } catch(e){}
+
+  gOverlay.innerHTML = `
+    <div class="auth-modal" style="max-width:400px; background:#1c2235; border:1px solid rgba(255,255,255,0.16); box-shadow:0 24px 50px rgba(0,0,0,0.7); padding:28px 24px; border-radius:18px;">
+      <button class="auth-close" id="closeGoogleDialog" style="top:14px; right:14px;">✕</button>
+      
+      <div style="text-align:center; margin-bottom:20px;">
+        <svg viewBox="0 0 24 24" style="width:38px; height:38px; margin:0 auto 10px; display:block;">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        <h3 style="margin:0; font-size:18px; font-weight:700; color:#fff;">Sign in with Google</h3>
+        <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">Choose an account to continue to <strong style="color:var(--text);">Ziora AI</strong></p>
+      </div>
+
+      <div id="googleAccountChooser">
+        <div style="border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:16px;">
+          <!-- 1-Click Primary Account Option -->
+          <div id="gOptionPrimary" style="display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; transition:background 0.15s; border-bottom:1px solid rgba(255,255,255,0.06);" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+            <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg, #4285F4, #34A853); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; flex-shrink:0;">
+              ${remembered.name ? remembered.name.charAt(0).toUpperCase() : 'G'}
+            </div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${remembered.name}
+              </div>
+              <div style="font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${remembered.email}
+              </div>
+            </div>
+            <span style="font-size:11px; color:#4285F4; font-weight:600; background:rgba(66,133,244,0.12); padding:2px 8px; border-radius:10px;">Google</span>
+          </div>
+
+          <!-- Use Another Account Option -->
+          <div id="gOptionAnother" style="display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+            <div style="width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:16px; flex-shrink:0;">
+              👤+
+            </div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13px; font-weight:600; color:#fff;">Use another Google account</div>
+              <div style="font-size:11px; color:var(--muted);">Sign in with a different Gmail</div>
+            </div>
+            <span style="font-size:14px; color:var(--muted);">›</span>
+          </div>
+        </div>
+
+        <div style="font-size:11px; color:var(--muted); line-height:1.5; text-align:center; padding:0 4px;">
+          To continue, Google will share your name and email address with Ziora AI.
+        </div>
+      </div>
+
+      <!-- Manual Google Input Form -->
+      <form id="googleDirectForm" style="display:none; flex-direction:column; gap:12px;">
+        <div class="form-group">
+          <label style="font-size:12px; font-weight:600; color:var(--text); margin-bottom:4px; display:block;">Google Email</label>
+          <input type="email" id="gEmail" class="form-control" placeholder="user@gmail.com" required style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label style="font-size:12px; font-weight:600; color:var(--text); margin-bottom:4px; display:block;">Full Name</label>
+          <input type="text" id="gName" class="form-control" placeholder="John Doe" style="width:100%;">
+        </div>
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <button type="button" id="gBackBtn" class="btn ghost" style="flex:1; font-size:12px; padding:8px;">
+            ← Back
+          </button>
+          <button type="submit" class="auth-btn-submit" style="flex:2; background:#4285F4; border-color:#4285F4;">
+            Sign in with Google
+          </button>
+        </div>
+      </form>
+
+      <div id="gLoading" style="display:none; text-align:center; padding:18px 0; color:var(--muted); font-size:12px;">
+        <div class="spinner" style="margin:0 auto 10px; width:22px; height:22px; border:2px solid rgba(255,255,255,0.2); border-top-color:#4285F4; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+        Authenticating with Google...
+      </div>
+    </div>
+  `;
+  document.body.appendChild(gOverlay);
+
+  const closeGoogle = () => gOverlay.remove();
+  gOverlay.querySelector('#closeGoogleDialog').onclick = closeGoogle;
+  gOverlay.onclick = (e) => { if (e.target === gOverlay) closeGoogle(); };
+
+  gOverlay.querySelector('#gOptionAnother').onclick = () => {
+    gOverlay.querySelector('#googleAccountChooser').style.display = 'none';
+    gOverlay.querySelector('#googleDirectForm').style.display = 'flex';
+    gOverlay.querySelector('#gEmail').focus();
+  };
+  gOverlay.querySelector('#gBackBtn').onclick = () => {
+    gOverlay.querySelector('#googleDirectForm').style.display = 'none';
+    gOverlay.querySelector('#googleAccountChooser').style.display = 'block';
+  };
+
+  async function performGoogleAuth(email, name) {
+    const chooser = gOverlay.querySelector('#googleAccountChooser');
+    const form = gOverlay.querySelector('#googleDirectForm');
+    const loader = gOverlay.querySelector('#gLoading');
+    if (chooser) chooser.style.display = 'none';
+    if (form) form.style.display = 'none';
+    if (loader) loader.style.display = 'block';
+
+    try {
+      const res = await fetch(API + '/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, provider: 'google' })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Google authentication failed');
+      }
+      const user = await res.json();
+      localStorage.setItem('ziora_last_google', JSON.stringify({ email: user.email, name: user.name }));
+      setCurrentUser(user);
+      pushToast(`Signed in with Google as ${user.name}`, 'good');
+      
+      // Close Google dialog and any open parent auth dialog
+      gOverlay.remove();
+      const parentAuth = document.getElementById('authOverlay');
+      if (parentAuth) parentAuth.remove();
+
+      if (typeof onSuccess === 'function') {
+        onSuccess();
+      }
+    } catch (err) {
+      if (loader) loader.style.display = 'none';
+      if (chooser) chooser.style.display = 'block';
+      pushToast(err.message, 'bad');
+    }
+  }
+
+  gOverlay.querySelector('#gOptionPrimary').onclick = () => {
+    performGoogleAuth(remembered.email, remembered.name);
+  };
+
+  gOverlay.querySelector('#googleDirectForm').onsubmit = (e) => {
+    e.preventDefault();
+    const email = gOverlay.querySelector('#gEmail').value.trim();
+    const name = gOverlay.querySelector('#gName').value.trim() || email.split('@')[0];
+    performGoogleAuth(email, name);
+  };
+}
+
+/* ================= AUTH MODAL (SIGN IN / SIGN UP) ================= */
+function openAuth(mode, onAuthSuccess) {
+  // Remove existing overlay if any
+  const existing = document.getElementById('authOverlay');
+  if (existing) existing.remove();
+
+  currentAuthMode = mode;
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-overlay';
+  overlay.id = 'authOverlay';
+  overlay.innerHTML = `
+    <div class="auth-modal">
+      <button class="auth-close" id="closeAuth">✕</button>
+      <div class="auth-header">
+        <h2 id="authTitle">${mode === 'signin' ? 'Welcome back' : 'Create an account'}</h2>
+        <p id="authSub">${mode === 'signin' ? 'Sign in to access your appointments and start AI calls' : 'Sign up to get your personal appointment dashboard'}</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab ${mode === 'signin' ? 'active' : ''}" id="tabSignIn">Sign In</button>
+        <button class="auth-tab ${mode === 'signup' ? 'active' : ''}" id="tabSignUp">Sign Up</button>
+      </div>
+
+      <form id="authForm">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" class="form-control" id="authEmail" placeholder="name@example.com" required>
+        </div>
+        
+        <div class="form-group" id="nameGroup" style="display:${mode === 'signup' ? 'block' : 'none'};">
+          <label>Full Name</label>
+          <input type="text" class="form-control" id="authName" placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" class="form-control" id="authPassword" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="auth-btn-submit" id="authSubmitBtn">
+          ${mode === 'signin' ? 'Sign In' : 'Create Account'}
+        </button>
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <button class="btn-google" id="googleAuthBtn">
+        <svg viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const $ = (id) => overlay.querySelector('#' + id);
+
+  const setMode = (m) => {
+    currentAuthMode = m;
+    $('authTitle').textContent = m === 'signin' ? 'Welcome back' : 'Create an account';
+    $('authSub').textContent = m === 'signin' ? 'Sign in to access your appointments and start AI calls' : 'Sign up to get your personal appointment dashboard';
+    $('tabSignIn').classList.toggle('active', m === 'signin');
+    $('tabSignUp').classList.toggle('active', m === 'signup');
+    $('nameGroup').style.display = m === 'signup' ? 'block' : 'none';
+    $('authSubmitBtn').textContent = m === 'signin' ? 'Sign In' : 'Create Account';
+  };
+
+  $('tabSignIn').onclick = () => setMode('signin');
+  $('tabSignUp').onclick = () => setMode('signup');
+  $('closeAuth').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  // Google OAuth button handler
+  $('googleAuthBtn').onclick = () => {
+    openGoogleAccountPrompt(onAuthSuccess);
+  };
+
+  // Email/Password form submit handler
+  $('authForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = $('authEmail').value.trim();
+    const password = $('authPassword').value;
+    const name = $('authName').value.trim();
+
+    const submitBtn = $('authSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Please wait...';
+
+    const endpoint = currentAuthMode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
+    const payload = currentAuthMode === 'signin' ? { email, password } : { email, password, name };
+
+    try {
+      const res = await fetch(API + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Authentication failed');
+      }
+      const user = await res.json();
+      setCurrentUser(user);
+      pushToast(`Signed in successfully as ${user.name}`, 'good');
+      overlay.remove();
+      if (typeof onAuthSuccess === 'function') {
+        onAuthSuccess();
+      }
+    } catch (err) {
+      pushToast(err.message, 'bad');
+      submitBtn.disabled = false;
+      submitBtn.textContent = currentAuthMode === 'signin' ? 'Sign In' : 'Create Account';
+    }
+  };
+}
+
+/* ================= DATA LOADING & SYNC ================= */
+async function loadData() {
+  try {
+    const apptUrl = API + '/api/appointments' + (currentUser ? `?user_id=${encodeURIComponent(currentUser.id)}` : '?user_id=none');
+    const [dRes, aRes] = await Promise.all([
+      fetch(API + '/api/doctors'),
+      fetch(apptUrl),
+    ]);
+    if (!dRes.ok) throw new Error(`HTTP ${dRes.status} from /api/doctors`);
+    if (!aRes.ok) throw new Error(`HTTP ${aRes.status} from /api/appointments`);
+
+    const d = await dRes.json();
+    const a = await aRes.json();
+
+    doctors = Array.isArray(d?.doctors) ? d.doctors : [];
+    viewDate = d?.date || '';
+    appointments = currentUser && Array.isArray(a) ? a : [];
+    renderAll();
+  } catch (err) {
+    console.warn('Backend not reachable:', err);
+    renderAll();
+    pushToast('Cannot reach backend on port 8000', 'bad');
+  }
+}
+
+function connectEvents() {
+  // Guard: don't open a second events socket if one is already alive
+  if (eventsWs && (eventsWs.readyState === WebSocket.OPEN || eventsWs.readyState === WebSocket.CONNECTING)) return;
+  try {
+    eventsWs = new WebSocket(WS_BASE + '/ws/events');
+    eventsWs.onmessage = async (e) => {
+      try {
+        const m = JSON.parse(e.data);
+        if (!m.appointment) return;
+        if (currentUser && m.appointment.userId && m.appointment.userId !== currentUser.id && m.appointment.userId !== currentUser.email) {
+          return;
+        }
+        flashId = m.appointment.id;
+        await loadData();
+        if (m.type === 'appointment_booked') {
+          pushToast(`Booked: ${m.appointment.doctorName} at ${m.appointment.slot}`, 'good');
+          if (activeCall) activeCall.showBooking(m.appointment);
+        } else {
+          pushToast('Appointment cancelled', 'bad');
+        }
+        setTimeout(() => { flashId = null; renderAppointments(); }, 1600);
+      } catch (parseErr) {
+        console.error('Error parsing WS event:', parseErr);
+      }
+    };
+    eventsWs.onclose = () => { eventsWs = null; setTimeout(connectEvents, 3000); };
+  } catch (e) {
+    eventsWs = null;
+    setTimeout(connectEvents, 3000);
+  }
+}
+
+/* ================= RENDER FUNCTIONS ================= */
+function renderStats() {
+  const apptList = Array.isArray(appointments) ? appointments : [];
+  const docList = Array.isArray(doctors) ? doctors : [];
+  const booked = apptList.filter(a => a && a.status === 'booked').length;
+  const cancelled = apptList.filter(a => a && a.status === 'cancelled').length;
+  document.getElementById('statDoctors').textContent = docList.length;
+  document.getElementById('statBooked').textContent = booked;
+  document.getElementById('statCancelled').textContent = cancelled;
+
+  let nextSlot = '—';
+  const active = apptList.filter(a => a && a.status === 'booked').sort((x,y) => (x.slot || '').localeCompare(y.slot || ''));
+  if (active.length) nextSlot = active[0].slot;
+  else {
+    const all = [];
+    docList.forEach(d => (d.slots || []).forEach(s => { if (!bookedSlotsMap()[`${d.id}-${s}`]) all.push(s); }));
+    all.sort();
+    if (all.length) nextSlot = all[0];
+  }
+  document.getElementById('statNext').textContent = nextSlot;
+}
+
+function renderDoctors() {
+  const booked = bookedSlotsMap();
+  const docList = Array.isArray(doctors) ? doctors : [];
+  document.getElementById('docCount').textContent = `${docList.length} doctors · ${formatReadableDate(viewDate)}`;
+  const el = document.getElementById('docList');
+
+  if (!docList.length) {
+    el.innerHTML = `
+      <div style="padding:32px 16px; text-align:center; color:var(--muted); font-size:13px; line-height:1.6;">
+        <div style="font-size:26px; margin-bottom:8px;">🩺</div>
+        <strong style="color:var(--text); display:block; margin-bottom:4px; font-size:14px;">No doctors loaded</strong>
+        <span>Could not connect to backend or no doctors registered.</span>
+        <div style="margin-top:12px;">
+          <button class="btn ghost" onclick="loadData()" style="font-size:12px; padding:6px 14px; cursor:pointer;">
+            ↻ Retry Connection
+          </button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = docList.map(d => `
+    <div class="doctor" style="--doc-accent:${DOCTOR_SOLID[d.id] || '#6c8cff'};">
+      <div class="doctor-top">
+        <div class="doctor-id">
+          <div class="doctor-avatar" style="background:${DOCTOR_ACCENTS[d.id] || '#6c8cff'};">${initials(d.name)}</div>
+          <div>
+            <h4>${d.name}</h4>
+            <div class="spec"><span class="dot"></span>${d.speciality}</div>
+          </div>
+        </div>
+        <div class="count">${(d.slots || []).length} slots</div>
+      </div>
+      <div class="slots">
+        ${(d.slots || []).map(s => {
+          const taken = booked[`${d.id}-${s}`];
+          return `<span class="slot ${taken ? 'taken' : 'free'}">${s}</span>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAppointments() {
+  const apptList = Array.isArray(appointments) ? appointments : [];
+  document.getElementById('apptCount').textContent = `${apptList.length} total`;
+  const el = document.getElementById('apptList');
+  if (!currentUser) {
+    el.innerHTML = `
+      <div style="padding:28px 16px; text-align:center; color:var(--muted); font-size:13px; line-height:1.6;">
+        <div style="font-size:24px; margin-bottom:8px;">🔒</div>
+        <strong style="color:var(--text); display:block; margin-bottom:4px; font-size:14px;">Sign in to view your appointments</strong>
+        <p style="margin:4px 0 14px; font-size:12px;">Appointments are securely linked to your account.</p>
+        <button class="btn primary" onclick="openAuth('signin')" style="font-size:12px; padding:6px 18px; cursor:pointer;">Sign In / Sign Up</button>
+      </div>`;
+    return;
+  }
+  if (!apptList.length) {
+    el.innerHTML = `<div class="muted center" style="padding:24px">No appointments booked yet for this account.</div>`;
+    return;
+  }
+  el.innerHTML = apptList.map(a => `
+    <div class="appt ${a.status === 'cancelled' ? 'cancelled' : ''} ${flashId === a.id ? 'flash' : ''}">
+      <div class="appt-avatar">${initials(a.doctorName || '')}</div>
+      <div class="appt-main">
+        <h4>${a.doctorName} · ${a.slot}</h4>
+        <p>${a.speciality} · ${formatReadableDate(a.date)} · ${a.phone}</p>
+        <span class="badge ${a.status === 'cancelled' ? 'cancelled' : 'booked'}">
+          ${a.status === 'cancelled' ? 'Cancelled' : 'Confirmed'}
+        </span>
+      </div>
+      ${a.status !== 'cancelled' ? `<button class="btn danger" data-cancel="${a.id}">Cancel</button>` : '<span></span>'}
+    </div>
+  `).join('');
+
+  el.querySelectorAll('[data-cancel]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        const res = await fetch(API + `/api/appointments/${btn.dataset.cancel}/cancel`, { method: 'POST' });
+        if (!res.ok) throw new Error('Cancellation failed');
+      } catch (err) {
+        console.error('Cancel appointment error:', err);
+        pushToast('Failed to cancel appointment', 'bad');
+      }
+    });
+  });
+}
+
+function renderAll() {
+  renderStats();
+  renderDoctors();
+  renderAppointments();
+}
+
+function pushToast(msg, tone = 'good') {
+  const t = document.createElement('div');
+  t.className = `toast ${tone}`;
+  t.textContent = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+/* ================= CALL MODAL ================= */
+function openCall() {
+  if (!currentUser) {
+    pushToast('Please sign in or sign up first to start a call.', 'bad');
+    openAuth('signin', () => {
+      openCall();
+    });
+    return;
+  }
+  // Guard: only one call at a time
+  if (activeCall || document.querySelector('.overlay')) return;
+
+  let state = 'ringing', seconds = 0, muted = false, ended = false;
+  let timerInt = null, ringCtx = null, ringInt = null, rafId = null;
+  let ws = null, micStream = null, ctx = null, analyser = null, playGain = null;
+  let nextTime = 0, sources = [];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="phone">
+      <button class="phone-back" id="pBack" title="Close">← Back</button>
+      <div class="phone-top">
+        <div class="avatar" id="pAvatar">Z</div>
+        <h3>Ziora AI</h3>
+        <div class="timer" id="pTimer">00:00</div>
+      </div>
+      <div class="wave-wrap"><canvas id="pCanvas" style="width:100%;height:100%;display:block"></canvas></div>
+      <div class="transcript" id="pTranscript"></div>
+      <div id="pBooking"></div>
+      <div class="call-controls">
+        <button class="ctrl" id="pMute" title="Mute">🎙️</button>
+        <button class="ctrl end" id="pEnd" title="End call">⏻</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const $ = (id) => overlay.querySelector('#' + id);
+  const pTimer = $('pTimer'), pAvatar = $('pAvatar'),
+        pTranscript = $('pTranscript'), pMute = $('pMute'), pEnd = $('pEnd'),
+        pBooking = $('pBooking'), pCanvas = $('pCanvas');
+
+  /* ---- ring sound ---- */
+  function startRing() {
+    try {
+      ringCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = () => {
+        if (!ringCtx) return;
+        const o = ringCtx.createOscillator(), g = ringCtx.createGain(), now = ringCtx.currentTime;
+        o.frequency.value = 440; g.gain.value = 0.0001;
+        o.connect(g).connect(ringCtx.destination);
+        g.gain.exponentialRampToValueAtTime(0.08, now + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+        o.start(now); o.stop(now + 0.45);
+      };
+      beep(); ringInt = setInterval(beep, 1200);
+    } catch {}
+  }
+  function stopRing() {
+    clearInterval(ringInt);
+    if (ringCtx) { try { ringCtx.close(); } catch {} }
+    ringCtx = null; ringInt = null;
+  }
+
+  /* ---- waveform ---- */
+  function resizeCanvas() {
+    const r = pCanvas.getBoundingClientRect();
+    pCanvas.width = r.width * (devicePixelRatio || 1);
+    pCanvas.height = r.height * (devicePixelRatio || 1);
+  }
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+
+  function drawLoop() {
+    const c = pCanvas.getContext('2d'), { width, height } = pCanvas;
+    c.clearRect(0, 0, width, height);
+    const bars = 48, gap = 2, bw = (width - gap * (bars - 1)) / bars;
+    const data = new Uint8Array(analyser ? analyser.fftSize : 256).fill(128);
+    if (analyser) analyser.getByteTimeDomainData(data);
+    for (let i = 0; i < bars; i++) {
+      const v = muted ? 0.02 : Math.min(1, Math.abs(data[i * 4] - 128) / 128 * 3);
+      const h = Math.max(4, v * height * 0.9), x = i * (bw + gap), y = (height - h) / 2;
+      const g = c.createLinearGradient(0, y, 0, y + h);
+      g.addColorStop(0, '#38bdf8'); g.addColorStop(0.5, '#0284c7'); g.addColorStop(1, '#0369a1');
+      c.fillStyle = g; c.beginPath(); c.roundRect(x, y, bw, h, 3); c.fill();
+    }
+    rafId = requestAnimationFrame(drawLoop);
+  }
+
+  /* ---- transcript + booking card ---- */
+  const esc = (s) => String(s || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+
+  function addBubble(role, text) {
+    if (!text || !text.trim()) return;
+    const isUser = role === 'user';
+    const isSys = role === 'system';
+    const div = document.createElement('div');
+    div.className = `bubble ${role}`;
+
+    if (isSys) {
+      div.textContent = text;
+      pTranscript.appendChild(div);
+      pTranscript.scrollTop = pTranscript.scrollHeight;
+      return;
+    }
+
+    const who = isUser ? 'You' : 'Ziora AI';
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const checkmarks = isUser ? `<span style="color:#53bdeb; font-size:11px; margin-left:3px; letter-spacing:-1px;">✓✓</span>` : '';
+
+    div.innerHTML = `
+      <div class="who ${role}">${who}</div>
+      <div class="bubble-text">${esc(text.trim())}</div>
+      <div class="bubble-meta">
+        <span>${timeStr}</span>${checkmarks}
+      </div>
+    `;
+
+    pTranscript.appendChild(div);
+    pTranscript.scrollTop = pTranscript.scrollHeight;
+  }
+
+  function showBooking(a) {
+    pBooking.innerHTML = `
+      <div class="booking-card">
+        <h4>✓ Appointment confirmed</h4>
+        <p><strong>${esc(a.doctorName)}</strong> · ${esc(a.speciality)}</p>
+        <p>${formatReadableDate(a.date)} at ${esc(a.slot)}</p>
+        <p class="phone-num">Phone: ${esc(a.phone)}</p>
+      </div>`;
+    pTranscript.scrollTop = pTranscript.scrollHeight;
+  }
+  activeCall = { showBooking };
+
+  /* ---- agent audio playback (PCM16 @16 kHz) ---- */
+  function playPcm(buf) {
+    if (!ctx || buf.byteLength < 2) return;
+    // Align to 2-byte boundary to avoid RangeError
+    const evenLen = buf.byteLength - (buf.byteLength % 2);
+    const i16 = new Int16Array(buf.slice(0, evenLen));
+    const f32 = new Float32Array(i16.length);
+    for (let k = 0; k < i16.length; k++) f32[k] = i16[k] / 32768;
+    const ab = ctx.createBuffer(1, f32.length, 16000);
+    ab.copyToChannel(f32, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = ab; src.connect(playGain);
+    // Gapless scheduling: anchor on first chunk or after underrun (120 ms jitter buffer)
+    if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.12;
+    src.start(nextTime); nextTime += ab.duration;
+    sources.push(src);
+    src.onended = () => { sources = sources.filter(s => s !== src); };
+  }
+
+  function stopPlayback() {
+    sources.forEach(s => { try { s.stop(); } catch {} });
+    sources = []; nextTime = 0;
+  }
+
+  /* ---- mic capture worklet: Float32 -> Int16, batched into 512-sample chunks ---- */
+  const workletCode = `
+    class PCMCapture extends AudioWorkletProcessor {
+      constructor() { super(); this.buf = new Int16Array(512); this.n = 0; }
+      process(inputs) {
+        const ch = inputs[0] && inputs[0][0];
+        if (ch) for (let i = 0; i < ch.length; i++) {
+          const s = Math.max(-1, Math.min(1, ch[i]));
+          this.buf[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
+          if (this.n === 512) { this.port.postMessage(this.buf.buffer.slice(0)); this.n = 0; }
+        }
+        return true;
+      }
+    }
+    registerProcessor('pcm-capture', PCMCapture);`;
+
+  async function connect() {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+      });
+      ctx = new AudioContext({ sampleRate: 16000 });
+      await ctx.resume();
+      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletCode], { type: 'application/javascript' })));
+
+      analyser = ctx.createAnalyser(); analyser.fftSize = 256;
+      playGain = ctx.createGain(); playGain.connect(ctx.destination); playGain.connect(analyser);
+      const mic = ctx.createMediaStreamSource(micStream);
+      mic.connect(analyser);
+      const worklet = new AudioWorkletNode(ctx, 'pcm-capture');
+      const silent = ctx.createGain(); silent.gain.value = 0;
+      mic.connect(worklet); worklet.connect(silent).connect(ctx.destination);
+      worklet.port.onmessage = (e) => { if (ws && ws.readyState === 1 && !muted) ws.send(e.data); };
+    } catch (err) {
+      console.error('Mic error:', err);
+      pushToast('Microphone unavailable. Allow mic access in browser.', 'bad');
+      return finish();
+    }
+
+    const wsCallUrl = WS_BASE + '/ws/call?user_id=' + encodeURIComponent(currentUser ? currentUser.id : 'anon') + '&user_email=' + encodeURIComponent(currentUser ? currentUser.email : '');
+    ws = new WebSocket(wsCallUrl);
+    ws.binaryType = 'arraybuffer';
+    ws.onopen = goConnected;
+    ws.onmessage = (e) => {
+      if (typeof e.data !== 'string') return playPcm(e.data);
+      try {
+        const m = JSON.parse(e.data);
+        if (m.type === 'transcript') addBubble(m.role || m.sender || 'agent', m.text);
+        else if (m.type === 'interrupt') stopPlayback();
+      } catch (err) {}
+    };
+    ws.onerror = (err) => {
+      console.warn('Call WS error:', err);
+      pushToast('Could not reach the voice server. Check terminal.', 'bad');
+    };
+    ws.onclose = () => { if (!ended) finish(); };
+  }
+
+  function goConnected() {
+    state = 'connected';
+    timerInt = setInterval(() => {
+      seconds++;
+      pTimer.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+    }, 1000);
+  }
+
+  pMute.addEventListener('click', () => {
+    muted = !muted;
+    pMute.classList.toggle('active', muted);
+    pMute.textContent = muted ? '🔇' : '🎙️';
+    if (micStream) micStream.getAudioTracks().forEach(t => t.enabled = !muted);
+  });
+
+  function finish() {
+    if (ended) return;
+    ended = true; state = 'ended';
+    
+    activeCall = null;
+    stopRing(); clearInterval(timerInt); cancelAnimationFrame(rafId);
+    sources.forEach(s => { try { s.stop(); } catch {} });
+    sources = [];
+    if (ws) { try { ws.close(); } catch {} }
+    if (micStream) micStream.getTracks().forEach(t => t.stop());
+    if (ctx) { try { ctx.close(); } catch {} }
+    window.removeEventListener('resize', resizeCanvas);
+    setTimeout(() => overlay.remove(), 600);
+  }
+  pEnd.addEventListener('click', finish);
+  $('pBack').addEventListener('click', finish);
+
+  /* ---- call lifecycle: direct connection without delay ---- */
+  drawLoop();
+  connect();
+}
+
+/* ================= INIT ================= */
+// Top-right Sign In button
+const topSignIn = document.getElementById('navSignInBtn');
+if (topSignIn) {
+  topSignIn.onclick = () => openAuth('signin');
+}
+
+// Try Call button — use onclick so it can only be registered once (not stackable)
+const tryCall = document.getElementById('tryCallBtn');
+if (tryCall) {
+  tryCall.onclick = () => {
+    if (!currentUser) {
+      pushToast('Please sign in first to start a call.', 'bad');
+      openAuth('signin', () => { openCall(); });
+      return;
+    }
+    openCall();
+  };
+}
+
+// Restore header state
+if (currentUser) {
+  updateHeaderAuth(currentUser);
+}
+
+renderAll();
+loadData();
+connectEvents();
+</script>
+</body>
+</html>

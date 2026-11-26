@@ -1,0 +1,5 @@
+pipecat-ai[elevenlabs,google,silero,websocket]>=0.0.95
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-dotenv>=1.0
+loguru>=0.7

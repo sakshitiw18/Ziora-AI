@@ -1,26 +1,26 @@
-# Ziora AI: Voice Doctor Appointment Assistant
+# 🩺 Ziora AI: Voice Doctor Appointment Assistant
 
 A real-time voice agent that answers a call in the browser and can **check a doctor's availability, book an appointment, and cancel one**, all in a single natural conversation. A dashboard next to the call shows the live transcript, the doctors and their slots, and the appointments, which update the moment the agent books or cancels.
 
 The agent identifies the caller **only by the phone number they speak**. It reads the number back digit by digit and waits for a "yes" before it books or cancels. There is no OTP and no caller ID.
 
-> **LLM used: Google Gemini (`gemini-2.5-flash`, free quota)**
-> **STT and TTS: ElevenLabs** · **Pipeline: Pipecat (Python)** · **VAD: Silero**
+> 🧠 **LLM used: Google Gemini 3.5 Flash (`gemini-3.5-flash`)**
+> 🗣️ **STT and TTS: ElevenLabs** · 🎛️ **Pipeline: Pipecat (Python)** · 🎚️ **VAD: Silero**
 
 <!-- Add a screenshot or GIF here:  ![Ziora AI dashboard](docs/dashboard.png) -->
 
-## Features
+## ✨ Features
 
-- **Voice pipeline (Pipecat):** mic audio, then Silero VAD, ElevenLabs STT, Gemini, ElevenLabs TTS, then audio back to the browser, with barge-in (interrupting the agent stops its speech).
-- **Three LLM tools** registered in the pipeline via function calling: `check_doctor_availability`, `book_appointment`, `cancel_appointment`.
-- **Phone-number identification with a code-level guard:** booking and cancelling are refused unless `phone_confirmed` is true, so the read-back rule is enforced in code and not just in the prompt.
-- **No double booking:** a unique SQLite index on `(doctor, date, slot)` for active bookings makes two callers unable to take the same slot.
-- **Dashboard:** 10 mock doctors and their slots, a stats row, and an appointments list that highlights the row that was just booked or cancelled.
-- **Phone-style call screen:** ring and connect states, call timer, mute and end buttons, a live waveform that reacts to both voices, a chat-style live transcript and an in-call booking confirmation card.
-- **Live updates:** the backend pushes `booked` and `cancelled` events over a WebSocket, so no refresh is needed.
-- **Accounts:** email/password sign-up and sign-in, so each person sees their own appointments (see [Limitations](#limitations)).
+- 🎙️ **Voice pipeline (Pipecat):** mic audio, then Silero VAD, ElevenLabs STT, Gemini, ElevenLabs TTS, then audio back to the browser, with barge-in (interrupting the agent stops its speech).
+- 🛠️ **Three LLM tools** registered in the pipeline via function calling: `check_doctor_availability`, `book_appointment`, `cancel_appointment`.
+- 📞 **Phone-number identification with a code-level guard:** booking and cancelling are refused unless `phone_confirmed` is true, so the read-back rule is enforced in code and not just in the prompt.
+- 🚫 **No double booking:** a unique SQLite index on `(doctor, date, slot)` for active bookings makes two callers unable to take the same slot.
+- 📊 **Dashboard:** 10 mock doctors and their slots, a stats row, and an appointments list that highlights the row that was just booked or cancelled.
+- 📱 **Phone-style call screen:** ring and connect states, call timer, mute and end buttons, a live waveform that reacts to both voices, a chat-style live transcript and an in-call booking confirmation card.
+- ⚡ **Live updates:** the backend pushes `booked` and `cancelled` events over a WebSocket, so no refresh is needed.
+- 🔐 **Accounts:** email/password sign-up and sign-in, so each person sees their own appointments (see [Limitations](#limitations)).
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 Browser (frontend/index.html)                  FastAPI + Pipecat (backend/)
@@ -33,7 +33,7 @@ Browser (frontend/index.html)                  FastAPI + Pipecat (backend/)
 
 Audio goes over the WebSocket as raw PCM16, mono, 16 kHz in both directions. A small custom serializer (`serializer.py`) translates between that and Pipecat frames, which keeps the frontend a single plain HTML file with no build step.
 
-## Project structure
+## 📁 Project structure
 
 ```
 doctor-voice-ai/
@@ -52,7 +52,7 @@ doctor-voice-ai/
 └── README.md
 ```
 
-## Getting started
+## 🚀 Getting started
 
 **Requirements:** Python 3.10+, Chrome (or another Chromium browser) with a microphone, and two free API keys:
 
@@ -77,23 +77,23 @@ cp .env.example .env          # Windows: copy .env.example .env
 uvicorn main:app --port 8000
 ```
 
-Wait for `Application startup complete`, then open **http://localhost:8000** (do not open the HTML file directly, or the browser will block the microphone). Sign up, click **Try Call**, allow the mic, and **use headphones** to avoid echo.
+Wait for `Application startup complete`, then open **http://localhost:8000** (do not open the HTML file directly, or the browser will block the microphone). Sign up, click **Try Call**, allow the mic, and **use headphones** 🎧 to avoid echo.
 
 The SQLite database (`backend/clinic.db`) is created automatically and the 10 doctors are seeded on every start. Delete the file to reset all appointments and users.
 
-### Environment variables (`backend/.env`)
+### 🔑 Environment variables (`backend/.env`)
 
 | Variable | Required | Description |
 |---|---|---|
 | `ELEVENLABS_API_KEY` | yes | ElevenLabs key for STT and TTS |
 | `ELEVENLABS_VOICE_ID` | no | TTS voice (defaults to a built-in voice) |
 | `GOOGLE_API_KEY` | yes | Gemini API key |
-| `GEMINI_MODEL` | no | Defaults to `gemini-2.5-flash` |
+| `GEMINI_MODEL` | no | Defaults to `gemini-3.5-flash` |
 | `GOOGLE_CLIENT_ID` | no | Only needed if you wire up real Google sign-in |
 
-Never commit `.env`. It is already in `.gitignore`.
+⚠️ Never commit `.env`. It is already in `.gitignore`.
 
-## Try it
+## 🎬 Try it
 
 1. "Hi, I'd like to see a cardiologist."
 2. The agent asks for your number: "My number is 9 8 7 6 5 4 3 2 1 0." Then confirm the read-back with "Yes."
@@ -101,7 +101,7 @@ Never commit `.env`. It is already in `.gitignore`.
 4. The dashboard row lights up and the confirmation card appears in the call.
 5. Say "Cancel my appointment", confirm your number, and watch the row change to *Cancelled*.
 
-## The tools
+## 🧰 The tools
 
 | Tool | What it does |
 |---|---|
@@ -109,7 +109,7 @@ Never commit `.env`. It is already in `.gitignore`.
 | `book_appointment(phone_number, phone_confirmed, doctor_id, date, time)` | Books a slot. Fails if the number was not confirmed, the slot is taken, or the date is invalid. |
 | `cancel_appointment(phone_number, phone_confirmed, appointment_id?)` | Cancels the caller's appointment, found by phone number. If there are several, the agent asks which one. |
 
-## API
+## 🔌 API
 
 | Endpoint | Purpose |
 |---|---|
@@ -120,7 +120,7 @@ Never commit `.env`. It is already in `.gitignore`.
 | `WS /ws/call` | Voice call: binary PCM audio plus JSON transcript messages |
 | `WS /ws/events` | Live booked/cancelled events |
 
-## Limitations
+## ⚠️ Limitations
 
 This is a demo project, so some parts are simplified on purpose:
 
@@ -131,14 +131,14 @@ This is a demo project, so some parts are simplified on purpose:
 - Dates are handled in the server's local time, and bookings are open for the next 14 days.
 - Phone numbers are assumed to be 10-digit Indian mobile numbers (+91).
 
-## Troubleshooting
+## 🛟 Troubleshooting
 
-- **Dashboard is empty or shows "Backend not reachable":** make sure the server is running and you opened `http://localhost:8000`. Press F12 and check the Console for errors.
-- **Agent is silent for the first seconds:** the speech models load at startup. Wait for `Application startup complete` before clicking Try Call.
-- **No transcript or no reply:** check both API keys in `.env`, the terminal log for errors, and the browser's microphone permission.
-- **Choppy or repeating voice:** use headphones, and keep only one browser tab open.
-- **Import errors on startup:** Pipecat changes quickly. Run `pip show pipecat-ai`, check the docs for that version, and adjust the imports at the top of `pipeline.py` and `serializer.py`.
+- 📭 **Dashboard is empty or shows "Backend not reachable":** make sure the server is running and you opened `http://localhost:8000`. Press F12 and check the Console for errors.
+- 🤐 **Agent is silent for the first seconds:** the speech models load at startup. Wait for `Application startup complete` before clicking Try Call.
+- 🔇 **No transcript or no reply:** check both API keys in `.env`, the terminal log for errors, and the browser's microphone permission.
+- 🎧 **Choppy or repeating voice:** use headphones, and keep only one browser tab open.
+- 🐛 **Import errors on startup:** Pipecat changes quickly. Run `pip show pipecat-ai`, check the docs for that version, and adjust the imports at the top of `pipeline.py` and `serializer.py`.
 
-## Tech stack
+## 🧱 Tech stack
 
 Python · FastAPI · Pipecat · ElevenLabs (STT and TTS) · Google Gemini · Silero VAD · SQLite · plain HTML/CSS/JS with the Web Audio API
